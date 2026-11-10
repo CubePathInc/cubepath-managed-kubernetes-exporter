@@ -1,0 +1,210 @@
+# Prometheus rules for cubepath-managed-kubernetes-exporter.
+#
+# The exporter refreshes its data every 60 seconds (the CubePath monitoring collector polls
+# each cluster once a minute), so "for" durations are expressed in whole minutes and are never
+# shorter than 5 minutes: a shorter window would only see one or two samples.
+#
+# Check and test:
+#   promtool check rules rules/cubepath-kubernetes.rules.yaml
+#   promtool test rules rules/cubepath-kubernetes.rules.test.yaml
+
+groups:
+  # The recorded series is in the same group as the alerts that read it, so each evaluation
+  # sees the value recorded at the same instant.
+  - name: cubepath-kubernetes-cluster
+    rules:
+      # Seconds left before each certificate expires. The label "certificate" is "server"
+      # (API server certificate) or "client" (certificate the CubePath monitoring collector
+      # uses to read the cluster).
+      - record: cubepath_managed_kubernetes:certificate_expiry_seconds:remaining
+        expr: |
+          label_replace(
+            cubepath_managed_kubernetes_cluster_server_cert_expiry_timestamp_seconds - time(),
+            "certificate", "server", "", ""
+          )
+          or
+          label_replace(
+            cubepath_managed_kubernetes_cluster_client_cert_expiry_timestamp_seconds - time(),
+            "certificate", "client", "", ""
+          )
+
+      - alert: CubePathManagedKubernetesClusterAPIDown
+        expr: cubepath_managed_kubernetes_cluster_up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kubernetes API server of cluster {{ $labels.cluster }} is unreachable"
+          description: >-
+            The CubePath monitoring collector could not reach the API server of cluster
+            {{ $labels.cluster }} ({{ $labels.cluster_uuid }}) in its latest polls for 5 minutes.
+            Check cubepath_managed_kubernetes_cluster_poll_error for the kind of failure.
+
+      - alert: CubePathManagedKubernetesClusterNotReady
+        expr: |
+          cubepath_managed_kubernetes_cluster_ready == 0
+          and on (cluster_uuid)
+          cubepath_managed_kubernetes_cluster_up == 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kubernetes cluster {{ $labels.cluster }} is not ready"
+          description: >-
+            The API server of cluster {{ $labels.cluster }} answers but at least one readyz check
+            has been failing for 10 minutes. See cubepath_managed_kubernetes_cluster_readyz_check_failed for the
+            failing checks.
+
+      - alert: CubePathManagedKubernetesClusterNotMonitored
+        expr: cubepath_managed_kubernetes_cluster_monitored == 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cluster {{ $labels.cluster }} has not been polled for over 10 minutes"
+          description: >-
+            The CubePath monitoring collector has no recent poll of cluster {{ $labels.cluster }}
+            ({{ $labels.cluster_uuid }}), so no health or node data is available for it.
+            If the cluster was just created or is being changed this resolves by itself;
+            otherwise contact CubePath support.
+
+      - alert: CubePathManagedKubernetesPlatformComponentDegraded
+        expr: cubepath_managed_kubernetes_cluster_component_ready < cubepath_managed_kubernetes_cluster_component_desired
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Component {{ $labels.component }} of cluster {{ $labels.cluster }} is degraded"
+          description: >-
+            Component {{ $labels.component }} of cluster {{ $labels.cluster }} has had fewer ready
+            replicas than desired for 10 minutes ({{ $value }} ready). Compare
+            cubepath_managed_kubernetes_cluster_component_desired.
+
+      - alert: CubePathManagedKubernetesCertificateExpiringSoon
+        expr: |
+          cubepath_managed_kubernetes:certificate_expiry_seconds:remaining < 30 * 86400
+          and
+          cubepath_managed_kubernetes:certificate_expiry_seconds:remaining >= 7 * 86400
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The {{ $labels.certificate }} certificate of cluster {{ $labels.cluster }} expires in under 30 days"
+          description: >-
+            The {{ $labels.certificate }} certificate of cluster {{ $labels.cluster }} expires in
+            {{ $value | humanizeDuration }}.
+
+      - alert: CubePathManagedKubernetesCertificateExpiryCritical
+        expr: cubepath_managed_kubernetes:certificate_expiry_seconds:remaining < 7 * 86400
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "The {{ $labels.certificate }} certificate of cluster {{ $labels.cluster }} expires in under 7 days"
+          description: >-
+            The {{ $labels.certificate }} certificate of cluster {{ $labels.cluster }} expires in
+            {{ $value | humanizeDuration }} (a negative value means it already expired). Open a
+            ticket with CubePath support if it has not been renewed.
+
+      - alert: CubePathManagedKubernetesPodsPendingRising
+        expr: |
+          cubepath_managed_kubernetes_cluster_pods_pending > 5
+          and
+          delta(cubepath_managed_kubernetes_cluster_pods_pending[30m]) > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pending pods are piling up in cluster {{ $labels.cluster }}"
+          description: >-
+            Cluster {{ $labels.cluster }} has {{ $value }} pods in Pending phase and the number
+            has grown over the last 30 minutes. The cluster may be out of capacity or a node
+            pool may be unable to scale up.
+
+  - name: cubepath-kubernetes-nodes
+    rules:
+      - alert: CubePathManagedKubernetesNodeNotReady
+        expr: cubepath_managed_kubernetes_node_ready == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node {{ $labels.node }} of cluster {{ $labels.cluster }} is not ready"
+          description: >-
+            Node {{ $labels.node }} of cluster {{ $labels.cluster }} has reported Ready=false for
+            5 minutes.
+
+      - alert: CubePathManagedKubernetesNodePressure
+        expr: cubepath_managed_kubernetes_node_condition == 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Node {{ $labels.node }} of cluster {{ $labels.cluster }} has {{ $labels.condition }}"
+          description: >-
+            The condition {{ $labels.condition }} has been true on node {{ $labels.node }} of
+            cluster {{ $labels.cluster }} for 10 minutes. Pods may be evicted.
+
+      - alert: CubePathManagedKubernetesNodePoolBelowDesired
+        expr: |
+          cubepath_managed_kubernetes_node_pool_nodes{state="current"}
+          < on (cluster_uuid, cluster, pool)
+          cubepath_managed_kubernetes_node_pool_nodes{state="desired"}
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Node pool {{ $labels.pool }} of cluster {{ $labels.cluster }} is below its desired size"
+          description: >-
+            Node pool {{ $labels.pool }} of cluster {{ $labels.cluster }} has had fewer nodes than
+            desired for 15 minutes ({{ $value }} nodes now). A new node normally joins within
+            several minutes.
+
+  - name: cubepath-kubernetes-exporter
+    rules:
+      - alert: CubePathManagedKubernetesExporterCannotRefresh
+        expr: cubepath_managed_kubernetes_exporter_last_refresh_success == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "cubepath-managed-kubernetes-exporter cannot read the CubePath API"
+          description: >-
+            The exporter has failed every refresh for 5 minutes. Look at
+            cubepath_managed_kubernetes_exporter_refresh_errors_total by stage and
+            cubepath_managed_kubernetes_exporter_api_errors_total by code, and at the exporter log.
+
+      - alert: CubePathManagedKubernetesExporterTokenRejected
+        # Both codes start at 0 in the exporter, so increase() sees the first rejection.
+        expr: increase(cubepath_managed_kubernetes_exporter_api_errors_total{code=~"UNAUTHENTICATED|HTTP_403"}[10m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "The CubePath API rejected the exporter token"
+          description: >-
+            The API refused the exporter with {{ $labels.code }}. UNAUTHENTICATED means the token
+            is invalid, expired or revoked; HTTP_403 means the caller IP is outside the token
+            allow-list.
+
+      - alert: CubePathManagedKubernetesExporterSnapshotStale
+        expr: cubepath_managed_kubernetes_exporter_snapshot_age_seconds > 600
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "cubepath-managed-kubernetes-exporter is serving data older than 10 minutes"
+          description: >-
+            The data served by the exporter is {{ $value | humanizeDuration }} old. The exporter
+            drops its snapshot after 10 minutes without a successful refresh.
+
+      - alert: CubePathManagedKubernetesExporterAbsent
+        expr: absent(cubepath_managed_kubernetes_exporter_build_info)
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "cubepath-managed-kubernetes-exporter is not being scraped"
+          description: >-
+            Prometheus has no cubepath_managed_kubernetes_exporter_build_info series for 5 minutes. The exporter
+            is down or the scrape job is misconfigured.

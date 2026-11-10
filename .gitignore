@@ -1,0 +1,8 @@
+/cubepath-managed-kubernetes-exporter
+/dist/
+*.test
+*.out
+coverage.txt
+.env
+*.token
+bin/

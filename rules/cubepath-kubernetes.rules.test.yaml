@@ -1,0 +1,260 @@
+# Unit tests for cubepath-kubernetes.rules.yaml. Run with:
+#   promtool test rules rules/cubepath-kubernetes.rules.test.yaml
+
+rule_files:
+  - cubepath-kubernetes.rules.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # Cluster API down: fires after 5 minutes of cubepath_managed_kubernetes_cluster_up == 0.
+  - interval: 1m
+    input_series:
+      - series: 'cubepath_managed_kubernetes_cluster_up{cluster_uuid="u1",cluster="prod"}'
+        values: '1 1 0 0 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: CubePathManagedKubernetesClusterAPIDown
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: CubePathManagedKubernetesClusterAPIDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              cluster_uuid: u1
+              cluster: prod
+            exp_annotations:
+              summary: "Kubernetes API server of cluster prod is unreachable"
+              description: "The CubePath monitoring collector could not reach the API server of cluster prod (u1) in its latest polls for 5 minutes. Check cubepath_managed_kubernetes_cluster_poll_error for the kind of failure."
+
+  # Cluster not ready only when the API server is up.
+  - interval: 1m
+    input_series:
+      - series: 'cubepath_managed_kubernetes_cluster_ready{cluster_uuid="u1",cluster="prod"}'
+        values: '1 0 0 0 0 0 0 0 0 0 0 0 0 0 0'
+      - series: 'cubepath_managed_kubernetes_cluster_up{cluster_uuid="u1",cluster="prod"}'
+        values: '1 1 1 1 1 1 1 1 1 1 1 1 1 1 1'
+      - series: 'cubepath_managed_kubernetes_cluster_ready{cluster_uuid="u2",cluster="down"}'
+        values: '0 0 0 0 0 0 0 0 0 0 0 0 0 0 0'
+      - series: 'cubepath_managed_kubernetes_cluster_up{cluster_uuid="u2",cluster="down"}'
+        values: '0 0 0 0 0 0 0 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: CubePathManagedKubernetesClusterNotReady
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              cluster_uuid: u1
+              cluster: prod
+            exp_annotations:
+              summary: "Kubernetes cluster prod is not ready"
+              description: "The API server of cluster prod answers but at least one readyz check has been failing for 10 minutes. See cubepath_managed_kubernetes_cluster_readyz_check_failed for the failing checks."
+
+  # Node not ready for 5 minutes.
+  - interval: 1m
+    input_series:
+      - series: 'cubepath_managed_kubernetes_node_ready{cluster_uuid="u1",cluster="prod",node="w1"}'
+        values: '1 1 0 0 0 0 0 0 0 0'
+      - series: 'cubepath_managed_kubernetes_node_ready{cluster_uuid="u1",cluster="prod",node="w2"}'
+        values: '1 1 1 1 1 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: CubePathManagedKubernetesNodeNotReady
+        exp_alerts: []
+      - eval_time: 9m
+        alertname: CubePathManagedKubernetesNodeNotReady
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              cluster_uuid: u1
+              cluster: prod
+              node: w1
+            exp_annotations:
+              summary: "Node w1 of cluster prod is not ready"
+              description: "Node w1 of cluster prod has reported Ready=false for 5 minutes."
+
+  # Node pressure condition.
+  - interval: 1m
+    input_series:
+      - series: 'cubepath_managed_kubernetes_node_condition{cluster_uuid="u1",cluster="prod",node="w1",condition="memory_pressure"}'
+        values: '0 1 1 1 1 1 1 1 1 1 1 1 1 1 1'
+      - series: 'cubepath_managed_kubernetes_node_condition{cluster_uuid="u1",cluster="prod",node="w1",condition="disk_pressure"}'
+        values: '0 0 0 0 0 0 0 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: CubePathManagedKubernetesNodePressure
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              cluster_uuid: u1
+              cluster: prod
+              node: w1
+              condition: memory_pressure
+            exp_annotations:
+              summary: "Node w1 of cluster prod has memory_pressure"
+              description: "The condition memory_pressure has been true on node w1 of cluster prod for 10 minutes. Pods may be evicted."
+
+  # Platform component degraded.
+  - interval: 1m
+    input_series:
+      - series: 'cubepath_managed_kubernetes_cluster_component_ready{cluster_uuid="u1",cluster="prod",component="coredns"}'
+        values: '2 1 1 1 1 1 1 1 1 1 1 1 1 1 1'
+      - series: 'cubepath_managed_kubernetes_cluster_component_desired{cluster_uuid="u1",cluster="prod",component="coredns"}'
+        values: '2 2 2 2 2 2 2 2 2 2 2 2 2 2 2'
+      - series: 'cubepath_managed_kubernetes_cluster_component_ready{cluster_uuid="u1",cluster="prod",component="cilium"}'
+        values: '3 3 3 3 3 3 3 3 3 3 3 3 3 3 3'
+      - series: 'cubepath_managed_kubernetes_cluster_component_desired{cluster_uuid="u1",cluster="prod",component="cilium"}'
+        values: '3 3 3 3 3 3 3 3 3 3 3 3 3 3 3'
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: CubePathManagedKubernetesPlatformComponentDegraded
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              cluster_uuid: u1
+              cluster: prod
+              component: coredns
+            exp_annotations:
+              summary: "Component coredns of cluster prod is degraded"
+              description: "Component coredns of cluster prod has had fewer ready replicas than desired for 10 minutes (1 ready). Compare cubepath_managed_kubernetes_cluster_component_desired."
+
+  # Certificates: the server certificate is in its last 30 days, the client one in its last 7,
+  # the second cluster is fine. time() at 20m is 1200 s.
+  - interval: 1m
+    input_series:
+      - series: 'cubepath_managed_kubernetes_cluster_server_cert_expiry_timestamp_seconds{cluster_uuid="u1",cluster="prod"}'
+        values: '1000000x30'
+      - series: 'cubepath_managed_kubernetes_cluster_client_cert_expiry_timestamp_seconds{cluster_uuid="u1",cluster="prod"}'
+        values: '500000x30'
+      - series: 'cubepath_managed_kubernetes_cluster_server_cert_expiry_timestamp_seconds{cluster_uuid="u2",cluster="ok"}'
+        values: '9000000x30'
+    promql_expr_test:
+      - expr: 'cubepath_managed_kubernetes:certificate_expiry_seconds:remaining{cluster="ok"}'
+        eval_time: 20m
+        exp_samples:
+          - labels: 'cubepath_managed_kubernetes:certificate_expiry_seconds:remaining{cluster_uuid="u2",cluster="ok",certificate="server"}'
+            value: 8998800
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: CubePathManagedKubernetesCertificateExpiringSoon
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              cluster_uuid: u1
+              cluster: prod
+              certificate: server
+            exp_annotations:
+              summary: "The server certificate of cluster prod expires in under 30 days"
+              description: "The server certificate of cluster prod expires in 11d 13h 21m 40s."
+      - eval_time: 25m
+        alertname: CubePathManagedKubernetesCertificateExpiryCritical
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              cluster_uuid: u1
+              cluster: prod
+              certificate: client
+            exp_annotations:
+              summary: "The client certificate of cluster prod expires in under 7 days"
+              description: "The client certificate of cluster prod expires in 5d 18h 28m 20s (a negative value means it already expired). Open a ticket with CubePath support if it has not been renewed."
+
+  # Node pool below desired.
+  - interval: 1m
+    input_series:
+      - series: 'cubepath_managed_kubernetes_node_pool_nodes{cluster_uuid="u1",cluster="prod",pool="workers",state="current"}'
+        values: '3 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2'
+      - series: 'cubepath_managed_kubernetes_node_pool_nodes{cluster_uuid="u1",cluster="prod",pool="workers",state="desired"}'
+        values: '3x19'
+      - series: 'cubepath_managed_kubernetes_node_pool_nodes{cluster_uuid="u1",cluster="prod",pool="workers",state="max"}'
+        values: '5x19'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: CubePathManagedKubernetesNodePoolBelowDesired
+        exp_alerts: []
+      - eval_time: 19m
+        alertname: CubePathManagedKubernetesNodePoolBelowDesired
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              cluster_uuid: u1
+              cluster: prod
+              pool: workers
+            exp_annotations:
+              summary: "Node pool workers of cluster prod is below its desired size"
+              description: "Node pool workers of cluster prod has had fewer nodes than desired for 15 minutes (2 nodes now). A new node normally joins within several minutes."
+
+  # Pods pending rising: grows by one every minute from 6.
+  - interval: 1m
+    input_series:
+      - series: 'cubepath_managed_kubernetes_cluster_pods_pending{cluster_uuid="u1",cluster="prod"}'
+        values: '6+1x50'
+      - series: 'cubepath_managed_kubernetes_cluster_pods_pending{cluster_uuid="u2",cluster="steady"}'
+        values: '9x50'
+    alert_rule_test:
+      - eval_time: 45m
+        alertname: CubePathManagedKubernetesPodsPendingRising
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              cluster_uuid: u1
+              cluster: prod
+            exp_annotations:
+              summary: "Pending pods are piling up in cluster prod"
+              description: "Cluster prod has 51 pods in Pending phase and the number has grown over the last 30 minutes. The cluster may be out of capacity or a node pool may be unable to scale up."
+
+  # Exporter health: refresh failing, token rejected and stale snapshot.
+  - interval: 1m
+    input_series:
+      - series: 'cubepath_managed_kubernetes_exporter_last_refresh_success'
+        values: '1 1 0 0 0 0 0 0 0 0 0 0 0'
+      - series: 'cubepath_managed_kubernetes_exporter_api_errors_total{code="UNAUTHENTICATED"}'
+        values: '0 0 1 2 3 4 5 6 7 8 9 10 11'
+      - series: 'cubepath_managed_kubernetes_exporter_snapshot_age_seconds'
+        values: '600+60x20'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: CubePathManagedKubernetesExporterCannotRefresh
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: CubePathManagedKubernetesExporterCannotRefresh
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              summary: "cubepath-managed-kubernetes-exporter cannot read the CubePath API"
+              description: "The exporter has failed every refresh for 5 minutes. Look at cubepath_managed_kubernetes_exporter_refresh_errors_total by stage and cubepath_managed_kubernetes_exporter_api_errors_total by code, and at the exporter log."
+      - eval_time: 12m
+        alertname: CubePathManagedKubernetesExporterSnapshotStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "cubepath-managed-kubernetes-exporter is serving data older than 10 minutes"
+              description: "The data served by the exporter is 22m 0s old. The exporter drops its snapshot after 10 minutes without a successful refresh."
+      - eval_time: 12m
+        alertname: CubePathManagedKubernetesExporterTokenRejected
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              code: UNAUTHENTICATED
+            exp_annotations:
+              summary: "The CubePath API rejected the exporter token"
+              description: "The API refused the exporter with UNAUTHENTICATED. UNAUTHENTICATED means the token is invalid, expired or revoked; HTTP_403 means the caller IP is outside the token allow-list."
+
+  # An IP allow-list rejection is an HTTP 403, not UNAUTHENTICATED: the same alert covers it.
+  - interval: 1m
+    input_series:
+      - series: 'cubepath_managed_kubernetes_exporter_api_errors_total{code="UNAUTHENTICATED"}'
+        values: '0x15'
+      - series: 'cubepath_managed_kubernetes_exporter_api_errors_total{code="HTTP_403"}'
+        values: '0 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14'
+    alert_rule_test:
+      - eval_time: 12m
+        alertname: CubePathManagedKubernetesExporterTokenRejected
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              code: HTTP_403
+            exp_annotations:
+              summary: "The CubePath API rejected the exporter token"
+              description: "The API refused the exporter with HTTP_403. UNAUTHENTICATED means the token is invalid, expired or revoked; HTTP_403 means the caller IP is outside the token allow-list."

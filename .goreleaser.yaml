@@ -1,0 +1,54 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: cubepath-managed-kubernetes-exporter
+    main: ./cmd/cubepath-managed-kubernetes-exporter
+    binary: cubepath-managed-kubernetes-exporter
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/CubePathInc/cubepath-managed-kubernetes-exporter/internal/version.Version={{.Version}}
+      - -X github.com/CubePathInc/cubepath-managed-kubernetes-exporter/internal/version.Revision={{.Commit}}
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    name_template: "cubepath-managed-kubernetes-exporter_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+
+release:
+  github:
+    owner: CubePathInc
+    name: cubepath-managed-kubernetes-exporter
+  draft: false
+  prerelease: auto
