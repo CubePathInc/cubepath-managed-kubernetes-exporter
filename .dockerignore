@@ -1,0 +1,11 @@
+.git
+.github
+.gitignore
+.dockerignore
+bin/
+dist/
+deploy/
+docs/
+dashboards/
+*.md
+!LICENSE

@@ -1,0 +1,31 @@
+# Usage: CUBEPATH_API_TOKEN=<token> docker compose up
+# Metrics: http://localhost:9777/metrics   Prometheus: http://localhost:9090
+services:
+  exporter:
+    image: ghcr.io/cubepathinc/cubepath-k8s-exporter:latest
+    environment:
+      CUBEPATH_API_TOKEN: ${CUBEPATH_API_TOKEN:?set CUBEPATH_API_TOKEN}
+    ports:
+      - "127.0.0.1:9777:9777"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    depends_on:
+      - exporter
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:

@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 60s
+
+scrape_configs:
+  - job_name: cubepath-k8s-exporter
+    scrape_timeout: 30s
+    static_configs:
+      - targets: ["exporter:9777"]

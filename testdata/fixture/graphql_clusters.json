@@ -1,0 +1,151 @@
+{
+ "data": {
+  "kubernetesClusters": [
+   {
+    "uuid": "22222222-2222-2222-2222-222222222222",
+    "name": "staging",
+    "health": null,
+    "nodes": [
+     {
+      "name": "staging-default-0",
+      "ready": null,
+      "memoryPressure": null,
+      "diskPressure": null,
+      "pidPressure": null,
+      "unschedulable": null,
+      "kubeletVersion": null,
+      "allocatable": null,
+      "usage": null,
+      "readySince": null,
+      "lastSeenAt": null,
+      "vps": {
+       "id": "2001",
+       "name": "staging-default-0"
+      }
+     }
+    ]
+   },
+   {
+    "uuid": "11111111-1111-1111-1111-111111111111",
+    "name": "prod",
+    "health": {
+     "polledAt": @{-20},
+     "up": true,
+     "ready": false,
+     "readyzFailed": [
+      "etcd"
+     ],
+     "latencyMs": 42,
+     "version": "v1.31.5",
+     "nodesTotal": 3,
+     "nodesReady": 2,
+     "nodesCordoned": 1,
+     "podsPending": 4,
+     "podsFailed": 1,
+     "components": [
+      {
+       "name": "cilium",
+       "ready": 3,
+       "desired": 3
+      },
+      {
+       "name": "coredns",
+       "ready": 2,
+       "desired": 2
+      },
+      {
+       "name": "konnectivity",
+       "ready": 2,
+       "desired": 3
+      },
+      {
+       "name": "api_proxy",
+       "ready": 3,
+       "desired": 3
+      },
+      {
+       "name": "autoscaler",
+       "ready": 0,
+       "desired": 0
+      }
+     ],
+     "metricsServer": true,
+     "clientCertExpires": 1830000000,
+     "serverCertExpires": 1820000000,
+     "errorKind": ""
+    },
+    "nodes": [
+     {
+      "name": "prod-default-0",
+      "ready": true,
+      "memoryPressure": false,
+      "diskPressure": false,
+      "pidPressure": false,
+      "unschedulable": false,
+      "kubeletVersion": "v1.31.5",
+      "allocatable": {
+       "cpuM": 1900,
+       "memBytes": 3900000000,
+       "pods": 110
+      },
+      "usage": {
+       "cpuM": 380,
+       "memBytes": 1200000000
+      },
+      "readySince": 1758090000,
+      "lastSeenAt": @{-20},
+      "vps": {
+       "id": "1001",
+       "name": "prod-default-0"
+      }
+     },
+     {
+      "name": "prod-default-1",
+      "ready": true,
+      "memoryPressure": false,
+      "diskPressure": true,
+      "pidPressure": false,
+      "unschedulable": false,
+      "kubeletVersion": "v1.31.5",
+      "allocatable": {
+       "cpuM": 1900,
+       "memBytes": 3900000000,
+       "pods": 110
+      },
+      "usage": {
+       "cpuM": 900,
+       "memBytes": 2000000000
+      },
+      "readySince": 1758090500,
+      "lastSeenAt": @{-20},
+      "vps": {
+       "id": "1002",
+       "name": "prod-default-1"
+      }
+     },
+     {
+      "name": "prod-gpu-0",
+      "ready": false,
+      "memoryPressure": true,
+      "diskPressure": false,
+      "pidPressure": false,
+      "unschedulable": true,
+      "kubeletVersion": "v1.31.4",
+      "allocatable": {
+       "cpuM": 1900,
+       "memBytes": 3900000000,
+       "pods": 110
+      },
+      "usage": null,
+      "readySince": 1758091000,
+      "lastSeenAt": @{-20},
+      "vps": {
+       "id": "1003",
+       "name": "prod-gpu-0"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

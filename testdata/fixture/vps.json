@@ -1,0 +1,487 @@
+{
+ "1001": {
+  "id": "1001",
+  "metrics": {
+   "step": 30,
+   "series": [
+    {
+     "name": "cpu_usage",
+     "unit": "RATIO",
+     "points": [
+      {
+       "ts": @{-90},
+       "value": 0.1
+      },
+      {
+       "ts": @{-60},
+       "value": 0.12
+      },
+      {
+       "ts": @{-30},
+       "value": 0.125
+      }
+     ]
+    },
+    {
+     "name": "memory_usage",
+     "unit": "BYTES",
+     "points": [
+      {
+       "ts": @{-90},
+       "value": 2000000000
+      },
+      {
+       "ts": @{-60},
+       "value": 2100000000
+      },
+      {
+       "ts": @{-30},
+       "value": 2147483648
+      }
+     ]
+    },
+    {
+     "name": "disk_read_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-90},
+       "value": 0
+      },
+      {
+       "ts": @{-60},
+       "value": 1024
+      },
+      {
+       "ts": @{-30},
+       "value": 2048
+      }
+     ]
+    },
+    {
+     "name": "disk_write_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-90},
+       "value": 4096
+      },
+      {
+       "ts": @{-60},
+       "value": 8192
+      },
+      {
+       "ts": @{-30},
+       "value": 16384
+      }
+     ]
+    },
+    {
+     "name": "network_receive_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-90},
+       "value": 1000
+      },
+      {
+       "ts": @{-60},
+       "value": 2000
+      },
+      {
+       "ts": @{-30},
+       "value": 3000
+      }
+     ]
+    },
+    {
+     "name": "network_transmit_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-90},
+       "value": 500
+      },
+      {
+       "ts": @{-60},
+       "value": 600
+      },
+      {
+       "ts": @{-30},
+       "value": 700
+      }
+     ]
+    }
+   ]
+  },
+  "networkBreakdown": {
+   "step": 30,
+   "series": [
+    {
+     "name": "network_public_receive_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-90},
+       "value": 100
+      },
+      {
+       "ts": @{-60},
+       "value": 200
+      },
+      {
+       "ts": @{-30},
+       "value": 300
+      }
+     ]
+    },
+    {
+     "name": "network_public_transmit_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-90},
+       "value": 50
+      },
+      {
+       "ts": @{-60},
+       "value": 60
+      },
+      {
+       "ts": @{-30},
+       "value": 70
+      }
+     ]
+    },
+    {
+     "name": "network_private_receive_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-90},
+       "value": 900
+      },
+      {
+       "ts": @{-60},
+       "value": 1800
+      },
+      {
+       "ts": @{-30},
+       "value": 2700
+      }
+     ]
+    },
+    {
+     "name": "network_private_transmit_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-90},
+       "value": 450
+      },
+      {
+       "ts": @{-60},
+       "value": 540
+      },
+      {
+       "ts": @{-30},
+       "value": 630
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "1002": {
+  "id": "1002",
+  "metrics": {
+   "step": 30,
+   "series": [
+    {
+     "name": "cpu_usage",
+     "unit": "RATIO",
+     "points": [
+      {
+       "ts": @{-60},
+       "value": 0.3
+      },
+      {
+       "ts": @{-30},
+       "value": 0.35
+      }
+     ]
+    },
+    {
+     "name": "memory_usage",
+     "unit": "BYTES",
+     "points": [
+      {
+       "ts": @{-60},
+       "value": 3000000000
+      },
+      {
+       "ts": @{-30},
+       "value": 3100000000
+      }
+     ]
+    },
+    {
+     "name": "disk_read_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-60},
+       "value": 10
+      },
+      {
+       "ts": @{-30},
+       "value": 20
+      }
+     ]
+    },
+    {
+     "name": "disk_write_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-60},
+       "value": 30
+      },
+      {
+       "ts": @{-30},
+       "value": 40
+      }
+     ]
+    },
+    {
+     "name": "network_receive_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-60},
+       "value": 5000
+      },
+      {
+       "ts": @{-30},
+       "value": 6000
+      }
+     ]
+    },
+    {
+     "name": "network_transmit_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-60},
+       "value": 2500
+      },
+      {
+       "ts": @{-30},
+       "value": 3500
+      }
+     ]
+    }
+   ]
+  },
+  "networkBreakdown": {
+   "step": 30,
+   "series": [
+    {
+     "name": "network_public_receive_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": []
+    },
+    {
+     "name": "network_public_transmit_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": []
+    },
+    {
+     "name": "network_private_receive_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": []
+    },
+    {
+     "name": "network_private_transmit_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": []
+    }
+   ]
+  }
+ },
+ "1003": {
+  "id": "1003",
+  "metrics": {
+   "step": 30,
+   "series": [
+    {
+     "name": "cpu_usage",
+     "unit": "RATIO",
+     "points": [
+      {
+       "ts": @{-930},
+       "value": 0.5
+      },
+      {
+       "ts": @{-900},
+       "value": 0.6
+      }
+     ]
+    },
+    {
+     "name": "memory_usage",
+     "unit": "BYTES",
+     "points": [
+      {
+       "ts": @{-930},
+       "value": 4000000000
+      },
+      {
+       "ts": @{-900},
+       "value": 4100000000
+      }
+     ]
+    }
+   ]
+  },
+  "networkBreakdown": {
+   "step": 30,
+   "series": []
+  }
+ },
+ "2001": {
+  "id": "2001",
+  "metrics": {
+   "step": 30,
+   "series": [
+    {
+     "name": "cpu_usage",
+     "unit": "RATIO",
+     "points": [
+      {
+       "ts": @{-60},
+       "value": 0.02
+      },
+      {
+       "ts": @{-30},
+       "value": 0.03
+      }
+     ]
+    },
+    {
+     "name": "memory_usage",
+     "unit": "BYTES",
+     "points": [
+      {
+       "ts": @{-60},
+       "value": 500000000
+      },
+      {
+       "ts": @{-30},
+       "value": 510000000
+      }
+     ]
+    },
+    {
+     "name": "disk_read_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-60},
+       "value": 1
+      },
+      {
+       "ts": @{-30},
+       "value": 2
+      }
+     ]
+    },
+    {
+     "name": "disk_write_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-60},
+       "value": 5
+      },
+      {
+       "ts": @{-30},
+       "value": null
+      }
+     ]
+    },
+    {
+     "name": "network_receive_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-60},
+       "value": 70
+      },
+      {
+       "ts": @{-30},
+       "value": 80
+      }
+     ]
+    },
+    {
+     "name": "network_transmit_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-60},
+       "value": 40
+      },
+      {
+       "ts": @{-30},
+       "value": 50
+      }
+     ]
+    }
+   ]
+  },
+  "networkBreakdown": {
+   "step": 30,
+   "series": [
+    {
+     "name": "network_public_receive_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-60},
+       "value": 70
+      },
+      {
+       "ts": @{-30},
+       "value": 80
+      }
+     ]
+    },
+    {
+     "name": "network_public_transmit_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": [
+      {
+       "ts": @{-60},
+       "value": 40
+      },
+      {
+       "ts": @{-30},
+       "value": 50
+      }
+     ]
+    },
+    {
+     "name": "network_private_receive_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": []
+    },
+    {
+     "name": "network_private_transmit_usage",
+     "unit": "BYTES_PER_SECOND",
+     "points": []
+    }
+   ]
+  }
+ }
+}

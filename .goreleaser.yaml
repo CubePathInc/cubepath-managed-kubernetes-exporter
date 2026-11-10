@@ -1,0 +1,54 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: cubepath-k8s-exporter
+    main: ./cmd/cubepath-k8s-exporter
+    binary: cubepath-k8s-exporter
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/CubePathInc/cubepath-k8s-exporter/internal/version.Version={{.Version}}
+      - -X github.com/CubePathInc/cubepath-k8s-exporter/internal/version.Revision={{.Commit}}
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    name_template: "cubepath-k8s-exporter_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+
+release:
+  github:
+    owner: CubePathInc
+    name: cubepath-k8s-exporter
+  draft: false
+  prerelease: auto
